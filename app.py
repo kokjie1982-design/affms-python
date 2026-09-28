@@ -30,7 +30,7 @@ class PondBatch(db.Model):
     stocking_date = db.Column(db.String(50), nullable=False)
 
     @property
-    case_survival_rate(self):
+    def case_survival_rate(self):
         if self.initial_count == 0: return 0.0
         return round((self.current_count / self.initial_count) * 100, 1)
 
