@@ -54,7 +54,7 @@ class FeedInventory(db.Model):
     stock_kg = db.Column(db.Float, nullable=False)
     threshold_kg = db.Column(db.Float, nullable=False)
 
-# --- EMBEDDED FRONTEND TEMPLATE (Tailwind CSS + Chart.js + Dynamic JS) ---
+# --- EMBEDDED FRONTEND TEMPLATE ---
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -112,7 +112,7 @@ HTML_TEMPLATE = """
         <section class="flex justify-center items-center py-8">
             <div class="bg-white p-8 rounded-xl shadow-md border border-slate-200 max-w-md w-full space-y-6">
                 <div class="text-center space-y-2">
-                    <h2 class="text-2xl font-bold text-slate-800">AFFMS Python Sign In</h2>
+                    <h2 class="text-2xl font-bold text-slate-800">AFFMS Portal Sign In</h2>
                     <p class="text-xs text-slate-500">Sign in to access farm telemetry and batch management</p>
                 </div>
 
@@ -426,7 +426,6 @@ HTML_TEMPLATE = """
         {% if current_user %}
         window.onload = function() {
             runCalc();
-            // Render Chart.js
             const ctxWater = document.getElementById('chartWaterTrends').getContext('2d');
             new Chart(ctxWater, {
                 type: 'line',
@@ -560,33 +559,27 @@ def add_water_log():
     db.session.commit()
     return redirect(url_for('index'))
 
-# --- DATABASE SEEDING & APP LAUNCH ---
-def init_db():
-    with app.app_context():
-        db.create_all()
-        if User.query.count() == 0:
-            # Seed Demo Users
-            db.session.add(User(name="Kok Jie", email="admin@affms.com", password_hash=generate_password_hash("admin123"), role="Farm Manager"))
-            db.session.add(User(name="Ahmad", email="worker@affms.com", password_hash=generate_password_hash("worker123"), role="Field Technician"))
-            
-            # Seed Demo Batches
-            db.session.add(PondBatch(pond_name="Pond A", species="Tilapia", initial_count=5000, current_count=4850, avg_weight_grams=250.0, stocking_date="2026-01-15"))
-            db.session.add(PondBatch(pond_name="Pond B", species="Catfish", initial_count=8000, current_count=7600, avg_weight_grams=180.0, stocking_date="2026-02-01"))
+# --- AUTOMATIC DATABASE INITIALIZATION FOR RENDER / GUNICORN ---
+with app.app_context():
+    db.create_all()
+    if User.query.count() == 0:
+        # Seed Demo Users
+        db.session.add(User(name="Kok Jie", email="admin@affms.com", password_hash=generate_password_hash("admin123"), role="Farm Manager"))
+        db.session.add(User(name="Ahmad", email="worker@affms.com", password_hash=generate_password_hash("worker123"), role="Field Technician"))
+        
+        # Seed Demo Batches
+        db.session.add(PondBatch(pond_name="Pond A", species="Tilapia", initial_count=5000, current_count=4850, avg_weight_grams=250.0, stocking_date="2026-01-15"))
+        db.session.add(PondBatch(pond_name="Pond B", species="Catfish", initial_count=8000, current_count=7600, avg_weight_grams=180.0, stocking_date="2026-02-01"))
 
-            # Seed Water Logs
-            db.session.add(WaterLog(timestamp="10:00 AM", pond_name="Pond A", ph=7.2, dissolved_oxygen=6.5, temp_celsius=27.5, ammonia=0.02, status="Safe"))
-            db.session.add(WaterLog(timestamp="10:15 AM", pond_name="Pond B", ph=6.1, dissolved_oxygen=5.8, temp_celsius=28.0, ammonia=0.04, status="Alert"))
+        # Seed Water Logs
+        db.session.add(WaterLog(timestamp="10:00 AM", pond_name="Pond A", ph=7.2, dissolved_oxygen=6.5, temp_celsius=27.5, ammonia=0.02, status="Safe"))
+        db.session.add(WaterLog(timestamp="10:15 AM", pond_name="Pond B", ph=6.1, dissolved_oxygen=5.8, temp_celsius=28.0, ammonia=0.04, status="Alert"))
 
-            # Seed Feed Inventory
-            db.session.add(FeedInventory(name="High-Protein Starter Pellets (32%)", stock_kg=120.0, threshold_kg=150.0))
-            db.session.add(FeedInventory(name="Grower Pellets (28%)", stock_kg=450.0, threshold_kg=200.0))
+        # Seed Feed Inventory
+        db.session.add(FeedInventory(name="High-Protein Starter Pellets (32%)", stock_kg=120.0, threshold_kg=150.0))
+        db.session.add(FeedInventory(name="Grower Pellets (28%)", stock_kg=450.0, threshold_kg=200.0))
 
-            db.session.commit()
+        db.session.commit()
 
 if __name__ == '__main__':
-    init_db()
-    print("==================================================")
-    print("AFFMS Python Web Server running on http://localhost:5000")
-    print("Demo Login: admin@affms.com / admin123")
-    print("==================================================")
     app.run(debug=True, port=5000)
